@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from app.core.database import dremio_client
-from app.models.filter import FilterOptions
+from models.filter import FilterOptions
 
 
 class FilterService:

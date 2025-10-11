@@ -1,4 +1,4 @@
-rom fastapi import APIRouter
+from fastapi import APIRouter
 from app.api.v1.endpoints import surveys, filters
 
 api_router = APIRouter()
