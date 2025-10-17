@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
@@ -34,34 +34,34 @@ class FilterOptions(BaseModel):
 
 class SurveyFilter(BaseModel):
     # Teams and Organizations
-    msl_name: Optional[str] = None
-    title: Optional[str] = None
-    department: Optional[str] = None
-    user_type: Optional[str] = None
+    msl_name: Optional[List[str]] = None
+    title: Optional[List[str]] = None
+    department: Optional[List[str]] = None
+    user_type: Optional[List[str]] = None
 
     # Geographic
-    region: Optional[str] = None
-    country_geo_id: Optional[str] = None
-    territory: Optional[str] = None
+    region: Optional[List[str]] = None
+    country_geo_id: Optional[List[str]] = None
+    territory: Optional[List[str]] = None
 
     # Medical
-    response: Optional[str] = None  # tumor type
-    product: Optional[str] = None
+    response: Optional[List[str]] = None
+    product: Optional[List[str]] = None
 
     # Healthcare provider (HCP)
-    account_name: Optional[str] = None
-    company: Optional[str] = None
-    name: Optional[str] = None
-    usertype: Optional[str] = None
+    account_name: Optional[List[str]] = None
+    company: Optional[List[str]] = None
+    name: Optional[List[str]] = None
+    usertype: Optional[List[str]] = None
 
     # Event & Engagement
-    channels: Optional[str] = None
-    assignment_type: Optional[str] = None
+    channels: Optional[List[str]] = None
+    assignment_type: Optional[List[str]] = None
 
     # Surveys
-    survey_name: Optional[str] = None
-    question: Optional[str] = None
+    survey_name: Optional[List[str]] = None
+    question: Optional[str] = None  # Keep as string for LIKE search
 
     # Pagination
-    page: int = 1
-    size: int = 50
+    page: int = Field(1, ge=1)
+    size: int = Field(50, ge=1, le=1000)

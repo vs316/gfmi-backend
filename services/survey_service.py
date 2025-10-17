@@ -1,13 +1,13 @@
 from typing import List, Optional, Dict, Any
 from app.core.database import dremio_client
-from app.models.survey import Survey, SurveyCreate, SurveyUpdate, SurveyListResponse
-from app.models.filter import SurveyFilter
+from models.survey import Survey, SurveyCreate, SurveyUpdate, SurveyListResponse
+from models.filter import SurveyFilter
 import uuid
 
 
 class SurveyService:
     def __init__(self):
-        self.table_name = "survey_responses"  # Adjust based on actual Dremio table name
+        self.table_name = "survey_responses"
 
     def create_survey(self, survey: SurveyCreate) -> Survey:
         survey_qstn_resp_id = str(uuid.uuid4())
@@ -63,38 +63,33 @@ class SurveyService:
         where_conditions = []
         params = []
 
-        if filters.msl_name:
-            where_conditions.append("msl_name = ?")
-            params.append(filters.msl_name)
+        # Helper function to handle list filters with IN clause
+        def add_list_filter(field_name: str, field_values: Optional[List[str]]):
+            if field_values and len(field_values) > 0:
+                # Create placeholders for IN clause: (?, ?, ?)
+                placeholders = ", ".join(["?" for _ in field_values])
+                where_conditions.append(f"{field_name} IN ({placeholders})")
+                params.extend(field_values)
 
-        if filters.title:
-            where_conditions.append("title = ?")
-            params.append(filters.title)
+        # Apply filters - using IN clause for lists
+        add_list_filter("msl_name", filters.msl_name)
+        add_list_filter("title", filters.title)
+        add_list_filter("department", filters.department)
+        add_list_filter("user_type", filters.user_type)
+        add_list_filter("country_geo_id", filters.country_geo_id)
+        add_list_filter("region", filters.region)
+        add_list_filter("territory", filters.territory)
+        add_list_filter("response", filters.response)
+        add_list_filter("product", filters.product)
+        add_list_filter("account_name", filters.account_name)
+        add_list_filter("company", filters.company)
+        add_list_filter("name", filters.name)
+        add_list_filter("usertype", filters.usertype)
+        add_list_filter("channels", filters.channels)
+        add_list_filter("assignment_type", filters.assignment_type)
+        add_list_filter("survey_name", filters.survey_name)
 
-        if filters.department:
-            where_conditions.append("department = ?")
-            params.append(filters.department)
-
-        if filters.country_geo_id:
-            where_conditions.append("country_geo_id = ?")
-            params.append(filters.country_geo_id)
-
-        if filters.territory:
-            where_conditions.append("territory = ?")
-            params.append(filters.territory)
-
-        if filters.response:
-            where_conditions.append("response = ?")
-            params.append(filters.response)
-
-        if filters.account_name:
-            where_conditions.append("account_name = ?")
-            params.append(filters.account_name)
-
-        if filters.survey_name:
-            where_conditions.append("survey_name = ?")
-            params.append(filters.survey_name)
-
+        # Question uses LIKE (keep as single value)
         if filters.question:
             where_conditions.append("question LIKE ?")
             params.append(f"%{filters.question}%")

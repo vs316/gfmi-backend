@@ -243,7 +243,9 @@ def main():
         print()
         print("🔥 Next steps:")
         print("1. Replace database import in your services")
-        print("2. Start your FastAPI backend: uvicorn app.main:app --reload")
+        print(
+            "2. Start your FastAPI backend: uvicorn app.main:app --reload --reload-dir app --host localhost --port 8000"
+        )
         print("3. Visit: http://localhost:8000/docs")
         print("4. Test all API endpoints locally!")
         print(f"5. Database file created: {os.path.abspath(DB_FILE)}")

@@ -1,15 +1,14 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import Optional
-from app.models.survey import Survey, SurveyCreate, SurveyUpdate, SurveyListResponse
-from app.models.filter import SurveyFilter
-from app.services.survey_service import survey_service
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional, List
+from models.survey import Survey, SurveyCreate, SurveyUpdate, SurveyListResponse
+from models.filter import SurveyFilter
+from services.survey_service import survey_service
 
 router = APIRouter()
 
 
 @router.post("/", response_model=Survey)
 def create_survey(survey: SurveyCreate):
-
     try:
         return survey_service.create_survey(survey)
     except Exception as e:
@@ -18,34 +17,35 @@ def create_survey(survey: SurveyCreate):
 
 @router.get("/", response_model=SurveyListResponse)
 def get_surveys(
-    # Teams and Organizations
-    msl_name: Optional[str] = Query(None, description="MSL Name"),
-    title: Optional[str] = Query(None, description="Title"),
-    department: Optional[str] = Query(None, description="Department"),
-    user_type: Optional[str] = Query(None, description="User Type"),
+    # Teams and Organizations - Accept multiple values
+    msl_name: Optional[List[str]] = Query(None, description="MSL Name"),
+    title: Optional[List[str]] = Query(None, description="Title"),
+    department: Optional[List[str]] = Query(None, description="Department"),
+    user_type: Optional[List[str]] = Query(None, description="User Type"),
     # Geographic
-    region: Optional[str] = Query(None, description="Region"),
-    country_geo_id: Optional[str] = Query(None, description="Country/Geo ID"),
-    territory: Optional[str] = Query(None, description="Territory"),
+    region: Optional[List[str]] = Query(None, description="Region"),
+    country_geo_id: Optional[List[str]] = Query(None, description="Country/Geo ID"),
+    territory: Optional[List[str]] = Query(None, description="Territory"),
     # Medical
-    response: Optional[str] = Query(None, description="Tumor Type/Response"),
-    product: Optional[str] = Query(None, description="Product"),
+    response: Optional[List[str]] = Query(None, description="Tumor Type/Response"),
+    product: Optional[List[str]] = Query(None, description="Product"),
     # Healthcare provider (HCP)
-    account_name: Optional[str] = Query(None, description="Account Name"),
-    company: Optional[str] = Query(None, description="Company"),
-    name: Optional[str] = Query(None, description="Name"),
-    usertype: Optional[str] = Query(None, description="User Type"),
+    account_name: Optional[List[str]] = Query(None, description="Account Name"),
+    company: Optional[List[str]] = Query(None, description="Company"),
+    name: Optional[List[str]] = Query(None, description="Name"),
+    usertype: Optional[List[str]] = Query(None, description="User Type"),
     # Event & Engagement
-    channels: Optional[str] = Query(None, description="Channels"),
-    assignment_type: Optional[str] = Query(None, description="Assignment Type"),
+    channels: Optional[List[str]] = Query(None, description="Channels"),
+    assignment_type: Optional[List[str]] = Query(None, description="Assignment Type"),
     # Surveys
-    survey_name: Optional[str] = Query(None, description="Survey Name"),
-    question: Optional[str] = Query(None, description="Question"),
+    survey_name: Optional[List[str]] = Query(None, description="Survey Name"),
+    question: Optional[str] = Query(
+        None, description="Question"
+    ),  # Keep as single value for LIKE search
     # Pagination
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(50, ge=1, le=1000, description="Page size"),
 ):
-
     try:
         filters = SurveyFilter(
             msl_name=msl_name,
@@ -75,7 +75,6 @@ def get_surveys(
 
 @router.get("/{survey_id}", response_model=Survey)
 def get_survey(survey_id: str):
-
     survey = survey_service.get_survey(survey_id)
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
@@ -84,7 +83,6 @@ def get_survey(survey_id: str):
 
 @router.put("/{survey_id}", response_model=Survey)
 def update_survey(survey_id: str, survey_update: SurveyUpdate):
-
     try:
         survey = survey_service.update_survey(survey_id, survey_update)
         if not survey:
@@ -96,7 +94,6 @@ def update_survey(survey_id: str, survey_update: SurveyUpdate):
 
 @router.delete("/{survey_id}")
 def delete_survey(survey_id: str):
-
     try:
         success = survey_service.delete_survey(survey_id)
         if not success:
