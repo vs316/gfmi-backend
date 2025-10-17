@@ -29,9 +29,10 @@
 # settings = Settings()
 from typing import List
 import os
+from pydantic_settings import BaseSettings
 
 
-class Settings:
+class Settings(BaseSettings):
     PROJECT_NAME: str = "GFMI Insight Buddy API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -55,6 +56,22 @@ class Settings:
         "http://localhost:5173",
         "http://localhost:8080",
     ]
+
+    # Dremio configuration
+    DREMIO_SERVER: str = os.getenv("DREMIO_SERVER", "http://localhost:9047")
+    DREMIO_TOKEN: str = os.getenv("DREMIO_TOKEN", "")
+    DREMIO_TABLE_PATH: str = os.getenv(
+        "DREMIO_TABLE_PATH",
+        '"Global Development"."Business Applications"."Medical Affairs"."GFMI".p_med_affairs_crm_survey_details',
+    )
+    AIR_API_BASE_URL: str = os.getenv("AIR_API_BASE_URL", "http://localhost:8080")
+    # Local testing flag
+    USE_LOCAL_DATA: bool = os.getenv("USE_LOCAL_DATA", "true").lower() == "true"
+    LOCAL_DATA_PATH: str = os.getenv("LOCAL_DATA_PATH", "data/survey_data.csv")
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
 
 
 settings = Settings()

@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 pandas
 python-multipart
+requests
+python-dotenv
+pydantic-settings
