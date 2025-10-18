@@ -5,3 +5,5 @@ python-multipart
 requests
 python-dotenv
 pydantic-settings
+pydantic
+colorama

@@ -1,58 +1,63 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 class SurveyFilter(BaseModel):
-    # Geographic filters - support multiple values
-    country_geo_id: Optional[List[str]] = Field(
+    # Geographic filters
+    country_geo_ids: Optional[List[str]] = Field(
         default=None, description="List of country geo IDs"
     )
-    territory: Optional[List[str]] = Field(
+    territories: Optional[List[str]] = Field(
         default=None, description="List of territories"
     )
-    region: Optional[List[str]] = Field(default=None, description="List of regions")
+    regions: Optional[List[str]] = Field(default=None, description="List of regions")
 
-    # Personnel filters - support multiple values
-    msl_name: Optional[List[str]] = Field(default=None, description="List of MSL names")
-    msl_key: Optional[List[str]] = Field(default=None, description="List of MSL keys")
-    title: Optional[List[str]] = Field(default=None, description="List of titles")
-    department: Optional[List[str]] = Field(
+    # Personnel filters
+    msl_names: Optional[List[str]] = Field(
+        default=None, description="List of MSL names"
+    )
+    titles: Optional[List[str]] = Field(default=None, description="List of titles")
+    departments: Optional[List[str]] = Field(
         default=None, description="List of departments"
     )
-    user_type: Optional[List[str]] = Field(
+    user_types: Optional[List[str]] = Field(
         default=None, description="List of user types"
     )
 
-    # Survey filters - support multiple values
-    survey_name: Optional[List[str]] = Field(
+    # Survey filters
+    survey_names: Optional[List[str]] = Field(
         default=None, description="List of survey names"
     )
-    survey_key: Optional[List[str]] = Field(
-        default=None, description="List of survey keys"
+    questions: Optional[List[str]] = Field(
+        default=None, description="List of questions"
     )
-    question: Optional[List[str]] = Field(default=None, description="List of questions")
 
-    # Medical filters - support multiple values
-    product: Optional[List[str]] = Field(default=None, description="List of products")
+    # Medical filters
+    products: Optional[List[str]] = Field(default=None, description="List of products")
     product_expertise: Optional[List[str]] = Field(
         default=None, description="List of product expertise"
     )
-    response: Optional[List[str]] = Field(
-        default=None, description="List of tumor types/responses"
+    tumor_types: Optional[List[str]] = Field(
+        default=None, description="List of tumor types (responses)"
     )
 
-    # HCP filters - support multiple values
-    account_name: Optional[List[str]] = Field(
+    # HCP filters
+    account_names: Optional[List[str]] = Field(
         default=None, description="List of account names"
     )
-    account_key: Optional[List[str]] = Field(
-        default=None, description="List of account keys"
+    institutions: Optional[List[str]] = Field(
+        default=None, description="List of institutions (companies)"
     )
-    company: Optional[List[str]] = Field(default=None, description="List of companies")
+    specialties: Optional[List[str]] = Field(
+        default=None, description="List of specialties"
+    )
+    practice_settings: Optional[List[str]] = Field(
+        default=None, description="List of practice settings"
+    )
 
-    # Event filters - support multiple values
+    # Event filters
     channels: Optional[List[str]] = Field(default=None, description="List of channels")
-    assignment_type: Optional[List[str]] = Field(
+    assignment_types: Optional[List[str]] = Field(
         default=None, description="List of assignment types"
     )
 
@@ -64,19 +69,19 @@ class SurveyFilter(BaseModel):
 class FilterOptions(BaseModel):
     """Available filter options"""
 
-    country_geo_ids: List[str]
-    territories: List[str]
-    regions: List[str]
-    msl_names: List[str]
-    titles: List[str]
-    departments: List[str]
-    user_types: List[str]
-    survey_names: List[str]
-    questions: List[str]
-    products: List[str]
-    product_expertise_options: List[str]
-    responses: List[str]
-    account_names: List[str]
-    companies: List[str]
-    channels: List[str]
-    assignment_types: List[str]
+    country_geo_ids: List[str] = Field(default_factory=list)
+    territories: List[str] = Field(default_factory=list)
+    regions: List[str] = Field(default_factory=list)
+    msl_names: List[str] = Field(default_factory=list)
+    titles: List[str] = Field(default_factory=list)
+    departments: List[str] = Field(default_factory=list)
+    user_types: List[str] = Field(default_factory=list)
+    survey_names: List[str] = Field(default_factory=list)
+    questions: List[str] = Field(default_factory=list)
+    products: List[str] = Field(default_factory=list)
+    product_expertise_options: List[str] = Field(default_factory=list)
+    responses: List[str] = Field(default_factory=list)
+    account_names: List[str] = Field(default_factory=list)
+    companies: List[str] = Field(default_factory=list)
+    channels: List[str] = Field(default_factory=list)
+    assignment_types: List[str] = Field(default_factory=list)

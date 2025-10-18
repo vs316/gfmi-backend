@@ -47,3 +47,5 @@ from app.core.database_sqlite import sqlite_client as dremio_client
 
 
 # dremio_client = DremioConnection()
+
+# this is not being used currently but keeping for future reference

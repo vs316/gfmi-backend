@@ -87,29 +87,54 @@ class DremioAPI:
 class DremioService:
     def __init__(self):
         self.api = DremioAPI(server=settings.DREMIO_SERVER, token=settings.DREMIO_TOKEN)
-        self.table_path = (
-            settings.DREMIO_TABLE_PATH
-        )  # "Global Development"."Business Applications"."Medical Affairs"."GFMI".p_med_affairs_crm_survey_details
+        self.table_path = settings.DREMIO_TABLE_PATH
+
+    # Map filter parameter names to actual database column names
+    FILTER_FIELD_MAPPING = {
+        "msl_names": "msl_name",  # Use msl_name column (contains emails with .mcrmeu suffix)
+        "titles": "title",
+        "departments": "department",
+        "user_types": "user_type",
+        "regions": "region",
+        "country_geo_ids": "country_geo_id",
+        "territories": "territory",
+        "tumor_types": "response",
+        "survey_names": "survey_name",
+        "questions": "question",
+        "account_names": "account_name",
+        "products": "product",
+        "product_expertise": "product_expertise",
+        "channels": "channels",
+        "assignment_types": "assignment_type",
+        "specialties": "specialty",
+        "practice_settings": "practice_setting",
+        "institutions": "company",
+    }
 
     def build_where_clause(self, filters: Dict[str, Any]) -> str:
         """Build WHERE clause from filters, supporting multiple values
-
-        FIXED: Properly formats SQL IN clauses with quoted values
+        
+        Maps filter parameter names to actual database column names
         """
         conditions = []
 
-        for field, values in filters.items():
-            if values and len(values) > 0:
-                # Escape single quotes in values
-                escaped_values = [str(v).replace("'", "''") for v in values]
+        for param_name, values in filters.items():
+            if not values or len(values) == 0:
+                continue
 
-                # Handle multiple values with IN clause
-                if len(values) == 1:
-                    conditions.append(f"\"{field}\" = '{escaped_values}'")
-                else:
-                    # Format as: "field" IN ('value1', 'value2', 'value3')
-                    values_str = ", ".join([f"'{v}'" for v in escaped_values])
-                    conditions.append(f'"{field}" IN ({values_str})')
+            # Get the actual database column name
+            db_column = self.FILTER_FIELD_MAPPING.get(param_name, param_name)
+            
+            # Escape single quotes in values
+            escaped_values = [str(v).replace("'", "''") for v in values]
+
+            # Handle multiple values with IN clause
+            if len(escaped_values) == 1:
+                conditions.append(f'"{db_column}" = \'{escaped_values[0]}\'')
+            else:
+                # Format as: "field" IN ('value1', 'value2', 'value3')
+                values_str = ", ".join([f"'{v}'" for v in escaped_values])
+                conditions.append(f'"{db_column}" IN ({values_str})')
 
         where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -141,25 +166,45 @@ class DremioService:
             base_query = f"""
                 SELECT 
                     survey_qstn_resp_id,
+                    survey_qstn_resp_key,
                     survey_key,
                     msl_key,
-                    msl_name,
+                    src_cd,
+                    account_key,
+                    prod_key,
+                    name,
                     country_geo_id,
-                    survey_name,
-                    question,
-                    response,
-                    product,
-                    account_name,
-                    title,
-                    company,
-                    useremail,
-                    department,
-                    user_type,
-                    product_expertise,
-                    channels,
-                    assignment_type,
                     territory,
-                    region
+                    region,
+                    msl_name,
+                    title,
+                    useremail,
+                    survey_name,
+                    assignment_type,
+                    channels,
+                    expired,
+                    language,
+                    product,
+                    segment,
+                    start_date,
+                    end_date,
+                    status,
+                    target_type,
+                    answer_choice,
+                    question,
+                    survey,
+                    decimal,
+                    number,
+                    type,
+                    response,
+                    account_name,
+                    msl_id,
+                    is_active,
+                    usertype,
+                    department,
+                    product_expertise,
+                    user_type,
+                    company
                 FROM {self.table_path}
                 WHERE {where_clause}
                 ORDER BY survey_qstn_resp_id
@@ -176,157 +221,21 @@ class DremioService:
                 WHERE {where_clause}
             """
             count_result = self.api.execute_query(count_query)
-            total_count = count_result["total_count"] if count_result else 0
+            total_count = count_result[0]["total_count"] if count_result else 0
+
+            total_pages = (total_count + filters.size - 1) // filters.size
+
+            logger.info(
+                f"Returning page {filters.page}/{total_pages} with {len(results)} surveys out of {total_count} total"
+            )
 
             return {
-                "data": results,
+                "surveys": results,
                 "total": total_count,
                 "page": filters.page,
                 "size": filters.size,
-                "pages": (total_count + filters.size - 1) // filters.size,
+                "total_pages": total_pages,
             }
 
         except Exception as e:
-            logger.error(f"Error in get_surveys: {str(e)}")
-            raise
-
-    def get_filter_options(
-        self, applied_filters: Optional[Dict[str, List[str]]] = None
-    ) -> FilterOptions:
-        """Get available filter options, optionally filtered by existing selections
-
-        Progressive filtering: If filters are applied, only show options that
-        are available given those constraints
-        """
-        try:
-            # Build WHERE clause based on applied filters
-            where_clause = "1=1"
-            if applied_filters:
-                where_clause = self.build_where_clause(applied_filters)
-
-            # Query to get distinct values for all filter fields
-            # This is optimized to get all distinct values in one query
-            query = f"""
-                SELECT DISTINCT
-                    country_geo_id,
-                    territory,
-                    region,
-                    msl_name,
-                    title,
-                    department,
-                    user_type,
-                    survey_name,
-                    question,
-                    product,
-                    product_expertise,
-                    response,
-                    account_name,
-                    company,
-                    channels,
-                    assignment_type
-                FROM {self.table_path}
-                WHERE {where_clause}
-            """
-
-            results = self.api.execute_query(query, limit=10000)
-
-            # Extract unique values for each field
-            options = {
-                "country_geo_ids": set(),
-                "territories": set(),
-                "regions": set(),
-                "msl_names": set(),
-                "titles": set(),
-                "departments": set(),
-                "user_types": set(),
-                "survey_names": set(),
-                "questions": set(),
-                "products": set(),
-                "product_expertise_options": set(),
-                "responses": set(),
-                "account_names": set(),
-                "companies": set(),
-                "channels": set(),
-                "assignment_types": set(),
-            }
-
-            # Map database fields to option keys
-            field_mapping = {
-                "country_geo_id": "country_geo_ids",
-                "territory": "territories",
-                "region": "regions",
-                "msl_name": "msl_names",
-                "title": "titles",
-                "department": "departments",
-                "user_type": "user_types",
-                "survey_name": "survey_names",
-                "question": "questions",
-                "product": "products",
-                "product_expertise": "product_expertise_options",
-                "response": "responses",
-                "account_name": "account_names",
-                "company": "companies",
-                "channels": "channels",
-                "assignment_type": "assignment_types",
-            }
-
-            for row in results:
-                for field, key in field_mapping.items():
-                    value = row.get(field)
-                    if value is not None and value != "":
-                        options[key].add(value)
-
-            # Convert sets to sorted lists
-            result = {}
-            for key, value_set in options.items():
-                result[key] = sorted(list(value_set))
-
-            return FilterOptions(**result)
-
-        except Exception as e:
-            logger.error(f"Error in get_filter_options: {str(e)}")
-            raise
-
-    def get_progressive_filter_options(
-        self, target_filter: str, applied_filters: Dict[str, List[str]]
-    ) -> List[str]:
-        """Get filter options for a specific field based on other applied filters
-
-        This enables progressive/cascading filters where selecting one filter
-        updates the available options in other filters
-
-        Args:
-            target_filter: The filter field to get options for (e.g., 'country_geo_id')
-            applied_filters: Dictionary of already applied filters
-
-        Returns:
-            List of available values for the target filter
-        """
-        try:
-            # Build WHERE clause from applied filters (excluding the target filter)
-            filter_dict = {
-                k: v for k, v in applied_filters.items() if k != target_filter
-            }
-            where_clause = (
-                self.build_where_clause(filter_dict) if filter_dict else "1=1"
-            )
-
-            # Query for distinct values of the target filter
-            query = f"""
-                SELECT DISTINCT "{target_filter}"
-                FROM {self.table_path}
-                WHERE {where_clause} 
-                    AND "{target_filter}" IS NOT NULL
-                ORDER BY "{target_filter}"
-            """
-
-            results = self.api.execute_query(query, limit=10000)
-
-            # Extract values
-            options = [row[target_filter] for row in results if row.get(target_filter)]
-
-            return options
-
-        except Exception as e:
-            logger.error(f"Error in get_progressive_filter_options: {str(e)}")
-            raise
+            logger.error(f"Error in
